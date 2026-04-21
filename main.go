@@ -45,9 +45,9 @@ func main() {
 
 	// s.Handle("/app/", http.FileServer(http.Dir(".")))
 	s.Handle("/app/", http.StripPrefix("/app", cfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
-	s.HandleFunc("/healthz", healthzHandler)
-	s.HandleFunc("/metrics", cfg.metrics)
-	s.HandleFunc("/reset", cfg.reset)
+	s.HandleFunc("GET /healthz", healthzHandler)
+	s.HandleFunc("GET /metrics", cfg.metrics)
+	s.HandleFunc("POST /reset", cfg.reset)
 
 	server := http.Server{
 		Addr:    ":8080",
