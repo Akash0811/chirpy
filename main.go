@@ -1,53 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"sync/atomic"
+
+	"github.com/Akash0811/chirpy/internal/backend"
 )
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func healthzHandler(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	resp.WriteHeader(http.StatusOK)
-	resp.Write([]byte("OK"))
-}
-
-func (cfg *apiConfig) metrics(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	resp.WriteHeader(http.StatusOK)
-	numHits := cfg.fileserverHits.Add(0)
-	resp.Write([]byte(fmt.Sprintf("Hits: %v\n", numHits)))
-}
-
-func (cfg *apiConfig) reset(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	resp.WriteHeader(http.StatusOK)
-	cfg.fileserverHits.And(0)
-	resp.Write([]byte("Hits reset to 0\n"))
-}
 
 func main() {
 	s := http.NewServeMux()
-	cfg := apiConfig{
-		fileserverHits: atomic.Int32{},
+	cfg := backend.ApiConfig{
+		FileserverHits: atomic.Int32{},
 	}
 
 	// s.Handle("/app/", http.FileServer(http.Dir(".")))
-	s.Handle("/app/", http.StripPrefix("/app", cfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
-	s.HandleFunc("GET /healthz", healthzHandler)
-	s.HandleFunc("GET /metrics", cfg.metrics)
-	s.HandleFunc("POST /reset", cfg.reset)
+	s.Handle("/app/", http.StripPrefix("/app", cfg.MiddlewareMetricsInc(http.FileServer(http.Dir(".")))))
+	s.HandleFunc("GET /api/healthz", backend.HealthzHandler)
+	s.HandleFunc("GET /admin/metrics", cfg.Metrics)
+	s.HandleFunc("POST /admin/reset", cfg.Reset)
 
 	server := http.Server{
 		Addr:    ":8080",
