@@ -18,6 +18,7 @@ func main() {
 	s.HandleFunc("GET /api/healthz", backend.HealthzHandler)
 	s.HandleFunc("GET /admin/metrics", cfg.Metrics)
 	s.HandleFunc("POST /admin/reset", cfg.Reset)
+	s.Handle("POST /api/validate_chirp", cfg.MiddlewareMetricsInc(http.HandlerFunc(backend.ValidateChirp)))
 
 	server := http.Server{
 		Addr:    ":8080",
