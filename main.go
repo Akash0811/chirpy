@@ -1,16 +1,30 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
 	"sync/atomic"
 
 	"github.com/Akash0811/chirpy/internal/backend"
+	"github.com/Akash0811/chirpy/internal/database"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	s := http.NewServeMux()
+
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		fmt.Printf("Failed to connect to database due to %v\n", err)
+	}
+	dbQueries := database.New(db)
+
 	cfg := backend.ApiConfig{
 		FileserverHits: atomic.Int32{},
+		Queries:        dbQueries,
 	}
 
 	// s.Handle("/app/", http.FileServer(http.Dir(".")))
