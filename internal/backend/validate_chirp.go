@@ -15,16 +15,23 @@ func ValidateChirp(resp http.ResponseWriter, req *http.Request) {
 	params := validateChirpIncomingPayload{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(resp, 500, fmt.Sprintf("Failed to decode incoming data due to %v", err))
+		fmt.Printf("Failed to decode input due to %v\n", err)
+		respondWithError(resp, 500, serverErrorString)
 		return
 	}
 
 	type outgoingPayload struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
+	}
+	cleanedBody, err := replaceBadWords(params.Body)
+	if err != nil {
+		fmt.Printf("Failed to clean body due to %v\n", err)
+		respondWithError(resp, 500, serverErrorString)
+		return
 	}
 
 	if len(params.Body) <= 140 {
-		respondWithJSON(resp, 200, outgoingPayload{Valid: true})
+		respondWithJSON(resp, 200, outgoingPayload{CleanedBody: cleanedBody})
 	} else {
 		respondWithError(resp, 400, "Chirp is too long")
 	}
