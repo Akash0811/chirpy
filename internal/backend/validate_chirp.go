@@ -16,7 +16,7 @@ func ValidateChirp(resp http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&params)
 	if err != nil {
 		fmt.Printf("Failed to decode input due to %v\n", err)
-		respondWithError(resp, 500, serverErrorString)
+		respondWithError(resp, 400, inputVaildationErrorString)
 		return
 	}
 

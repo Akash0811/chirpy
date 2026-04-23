@@ -20,6 +20,7 @@ VALUES (
 RETURNING id, created_at, updated_at, email
 `
 
+// plpgsql-language-server:disable
 func (q *Queries) CreateUser(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser, email)
 	var i User
