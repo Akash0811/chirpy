@@ -1,3 +1,4 @@
+/* plpgsql-language-server:disable */
 -- +goose Up
 CREATE TABLE users (
     id UUID PRIMARY KEY,

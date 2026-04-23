@@ -42,6 +42,7 @@ func main() {
 	s.HandleFunc("POST /admin/reset", cfg.Reset)
 	s.Handle("POST /api/validate_chirp", cfg.MiddlewareMetricsInc(http.HandlerFunc(backend.ValidateChirp)))
 	s.Handle("POST /api/users", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.AddUser)))
+	s.Handle("POST /api/chirps", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.AddChirp)))
 
 	server := http.Server{
 		Addr:    ":8080",
