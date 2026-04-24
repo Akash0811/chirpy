@@ -27,6 +27,7 @@ func (cfg *ApiConfig) AddChirp(resp http.ResponseWriter, req *http.Request) {
 
 	if len(params.Body) > 140 {
 		respondWithError(resp, 400, inputVaildationErrorString)
+		return
 	}
 
 	user, err := cfg.Queries.GetUser(req.Context(), params.UserID)
@@ -63,4 +64,50 @@ func (cfg *ApiConfig) AddChirp(resp http.ResponseWriter, req *http.Request) {
 		Body:      chirp.Body,
 		UserID:    chirp.UserID,
 	})
+}
+
+func (cfg *ApiConfig) GetAllChirps(resp http.ResponseWriter, req *http.Request) {
+	dbChirps, err := cfg.Queries.GetAllChirps(req.Context())
+	if err != nil {
+		respondWithError(resp, 404, "User not found")
+		return
+	}
+
+	type payloadChirp struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+	var payload []payloadChirp
+
+	for _, dbChirp := range dbChirps {
+		payload = append(payload, payloadChirp(dbChirp))
+	}
+	respondWithJSON(resp, 200, payload)
+}
+
+func (cfg *ApiConfig) GetChirp(resp http.ResponseWriter, req *http.Request) {
+	chirpID, err := uuid.Parse(req.PathValue("chirpID"))
+	if err != nil {
+		fmt.Printf("Could not parse uuid %v\n", req.PathValue("chirpID"))
+		respondWithError(resp, 400, inputVaildationErrorString)
+		return
+	}
+
+	dbChirp, err := cfg.Queries.GetChirp(req.Context(), chirpID)
+	if err != nil {
+		respondWithError(resp, 404, "User not found")
+		return
+	}
+
+	type payloadChirp struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+	respondWithJSON(resp, 200, payloadChirp(dbChirp))
 }

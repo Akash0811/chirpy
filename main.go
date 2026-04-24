@@ -43,6 +43,8 @@ func main() {
 	s.Handle("POST /api/validate_chirp", cfg.MiddlewareMetricsInc(http.HandlerFunc(backend.ValidateChirp)))
 	s.Handle("POST /api/users", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.AddUser)))
 	s.Handle("POST /api/chirps", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.AddChirp)))
+	s.Handle("GET /api/chirps", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.GetAllChirps)))
+	s.Handle("GET /api/chirps/{chirpID}", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.GetChirp)))
 
 	server := http.Server{
 		Addr:    ":8080",
