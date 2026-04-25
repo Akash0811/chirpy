@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Akash0811/chirpy/internal/auth"
+	"github.com/Akash0811/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -59,19 +60,37 @@ func (cfg *ApiConfig) LoginUser(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	expiryDuration, err := time.ParseDuration(fmt.Sprintf("%vh", defaultRefreshExpiry))
+	if err != nil {
+		fmt.Printf("Failed to create Refresh token due to %v\n", err)
+		respondWithError(resp, 500, serverErrorString)
+		return
+	}
+	refreshToken := auth.MakeRefreshToken()
+	_, err = cfg.Queries.CreateRefreshToken(
+		req.Context(),
+		database.CreateRefreshTokenParams{
+			Token:     refreshToken,
+			UserID:    user.ID,
+			ExpiresAt: time.Now().Add(expiryDuration),
+		},
+	)
+
 	type outgoingPayloadUser struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
-		Token     string    `json:"token"`
+		ID           uuid.UUID `json:"id"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		Email        string    `json:"email"`
+		Token        string    `json:"token"`
+		RefreshToken string    `json:"refresh_token"`
 	}
 	payload := outgoingPayloadUser{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     token,
+		ID:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 	respondWithJSON(
 		resp,

@@ -48,6 +48,8 @@ func main() {
 	s.Handle("GET /api/chirps", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.GetAllChirps)))
 	s.Handle("GET /api/chirps/{chirpID}", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.GetChirp)))
 	s.Handle("POST /api/login", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.LoginUser)))
+	s.Handle("POST /api/revoke", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.RevokeToken)))
+	s.Handle("POST /api/refresh", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.RefreshToken)))
 
 	server := http.Server{
 		Addr:    ":8080",
