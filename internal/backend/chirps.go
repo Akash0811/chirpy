@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Akash0811/chirpy/internal/auth"
 	"github.com/Akash0811/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
 func (cfg *ApiConfig) AddChirp(resp http.ResponseWriter, req *http.Request) {
 	type validateChirpIncomingPayload struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -25,12 +25,24 @@ func (cfg *ApiConfig) AddChirp(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(resp, 401, "Token invalid/expired")
+		return
+	}
+	userId, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		fmt.Printf("Failed to validate token due to %v\n", err)
+		respondWithError(resp, 401, "Token invalid/expired")
+		return
+	}
+
 	if len(params.Body) > 140 {
 		respondWithError(resp, 400, inputVaildationErrorString)
 		return
 	}
 
-	user, err := cfg.Queries.GetUser(req.Context(), params.UserID)
+	user, err := cfg.Queries.GetUser(req.Context(), userId)
 	if err != nil {
 		respondWithError(resp, 404, "User not found")
 		return

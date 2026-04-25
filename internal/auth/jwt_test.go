@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"net/http"
 	"testing"
 	"time"
 
@@ -80,5 +81,30 @@ func TestSecretTimeElapsed(t *testing.T) {
 	_, err = ValidateJWT(tokenString, tokenSecret)
 	if err == nil {
 		t.Fatalf("Expected ValidateJWT to fail")
+	}
+}
+
+func TestBearerPresent(t *testing.T) {
+	headers := http.Header{
+		"Content-Type":  []string{"application/json"},
+		"Authorization": []string{"Bearer  Passme  "},
+	}
+	token, err := GetBearerToken(headers)
+	if err != nil {
+		t.Fatalf("Expected no errors but got %v", err)
+	}
+	if token != "Passme" {
+		t.Fatalf("Expected token: Passme but got %s", token)
+	}
+}
+
+func TestBearerNotPresent(t *testing.T) {
+	headers := http.Header{
+		"Content-Type":   []string{"application/json"},
+		"Authentication": []string{"Bear  Passme  "},
+	}
+	_, err := GetBearerToken(headers)
+	if err == nil {
+		t.Fatal("Expected errors but got token")
 	}
 }

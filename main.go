@@ -23,6 +23,7 @@ func main() {
 
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
+	jwtSecret := os.Getenv("JWT_SECRET")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Printf("Failed to connect to database due to %v\n", err)
@@ -33,6 +34,7 @@ func main() {
 		FileserverHits: atomic.Int32{},
 		Queries:        dbQueries,
 		Platform:       platform,
+		JWTSecret:      jwtSecret,
 	}
 
 	// s.Handle("/app/", http.FileServer(http.Dir(".")))
