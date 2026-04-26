@@ -24,6 +24,7 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Printf("Failed to connect to database due to %v\n", err)
@@ -35,6 +36,7 @@ func main() {
 		Queries:        dbQueries,
 		Platform:       platform,
 		JWTSecret:      jwtSecret,
+		PolkaKey:       polkaKey,
 	}
 
 	// s.Handle("/app/", http.FileServer(http.Dir(".")))
@@ -52,6 +54,7 @@ func main() {
 	s.Handle("POST /api/refresh", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.RefreshToken)))
 	s.Handle("PUT /api/users", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.UpdateUser)))
 	s.Handle("DELETE /api/chirps/{chirpID}", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.DeleteChirp)))
+	s.Handle("POST /api/polka/webhooks", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.UpdateUserMembership)))
 
 	server := http.Server{
 		Addr:    ":8080",

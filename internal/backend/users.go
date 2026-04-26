@@ -27,10 +27,11 @@ func (cfg *ApiConfig) AddUser(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	type outgoingPayloadUser struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		ID          uuid.UUID `json:"id"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		Email       string    `json:"email"`
+		IsChirpyRed bool      `json:"is_chirpy_red"`
 	}
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
@@ -52,10 +53,11 @@ func (cfg *ApiConfig) AddUser(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	payload := outgoingPayloadUser{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 	respondWithJSON(
 		resp,
@@ -99,10 +101,11 @@ func (cfg *ApiConfig) UpdateUser(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	type outgoingPayloadUser struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		ID          uuid.UUID `json:"id"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		Email       string    `json:"email"`
+		IsChirpyRed bool      `json:"is_chirpy_red "`
 	}
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
@@ -125,14 +128,73 @@ func (cfg *ApiConfig) UpdateUser(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	payload := outgoingPayloadUser{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 	respondWithJSON(
 		resp,
 		200,
 		payload,
+	)
+}
+
+func (cfg *ApiConfig) UpdateUserMembership(resp http.ResponseWriter, req *http.Request) {
+	type data struct {
+		UserID string `json:"user_id"`
+	}
+	type webhookReq struct {
+		Event string `json:"event"`
+		Data  data   `json:"data"`
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	params := webhookReq{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		fmt.Printf("Failed to decode input due to %v\n", err)
+		respondWithError(resp, 400, inputVaildationErrorString)
+		return
+	}
+
+	if params.Event != "user.upgraded" {
+		respondWithJSON(resp, 204, struct{}{})
+		return
+	}
+
+	apiKey, err := auth.GetApiKey(req.Header)
+	if err != nil {
+		respondWithError(resp, 401, "Api key invalid")
+		return
+	}
+	if apiKey != cfg.PolkaKey {
+		respondWithError(resp, 401, "Api key invalid")
+		return
+	}
+
+	userID, err := uuid.Parse(params.Data.UserID)
+	if err != nil {
+		respondWithError(resp, 500, serverErrorString)
+		return
+	}
+	err = cfg.Queries.UpdateUserChrirpyRed(
+		req.Context(),
+		database.UpdateUserChrirpyRedParams{
+			ID:          userID,
+			IsChirpyRed: true,
+		},
+	)
+	if err != nil {
+		fmt.Printf("Failed to update user in database %v\n", err)
+		respondWithError(resp, 404, "User not found")
+		return
+	}
+
+	respondWithJSON(
+		resp,
+		204,
+		struct{}{},
 	)
 }
