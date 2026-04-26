@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/Akash0811/chirpy/internal/auth"
@@ -79,10 +80,28 @@ func (cfg *ApiConfig) AddChirp(resp http.ResponseWriter, req *http.Request) {
 }
 
 func (cfg *ApiConfig) GetAllChirps(resp http.ResponseWriter, req *http.Request) {
-	dbChirps, err := cfg.Queries.GetAllChirps(req.Context())
-	if err != nil {
-		respondWithError(resp, 404, "User not found")
-		return
+	userID := req.URL.Query().Get("author_id")
+	sortLogic := req.URL.Query().Get("sort")
+	var dbChirps []database.Chirp
+	var err error
+	if userID == "" {
+		dbChirps, err = cfg.Queries.GetAllChirps(req.Context())
+		if err != nil {
+			respondWithError(resp, 404, "User not found")
+			return
+		}
+	} else {
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			respondWithError(resp, 404, "User not found")
+			return
+		}
+
+		dbChirps, err = cfg.Queries.GetChirpByUser(req.Context(), userUUID)
+		if err != nil {
+			respondWithError(resp, 404, "User not found")
+			return
+		}
 	}
 
 	type payloadChirp struct {
@@ -93,6 +112,10 @@ func (cfg *ApiConfig) GetAllChirps(resp http.ResponseWriter, req *http.Request) 
 		UserID    uuid.UUID `json:"user_id"`
 	}
 	var payload []payloadChirp
+
+	if sortLogic == "desc" {
+		sort.Slice(dbChirps, func(i, j int) bool { return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt) })
+	}
 
 	for _, dbChirp := range dbChirps {
 		payload = append(payload, payloadChirp(dbChirp))
