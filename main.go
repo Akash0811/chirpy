@@ -50,6 +50,8 @@ func main() {
 	s.Handle("POST /api/login", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.LoginUser)))
 	s.Handle("POST /api/revoke", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.RevokeToken)))
 	s.Handle("POST /api/refresh", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.RefreshToken)))
+	s.Handle("PUT /api/users", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.UpdateUser)))
+	s.Handle("DELETE /api/chirps/{chirpID}", cfg.MiddlewareMetricsInc(http.HandlerFunc(cfg.DeleteChirp)))
 
 	server := http.Server{
 		Addr:    ":8080",

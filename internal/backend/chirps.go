@@ -44,7 +44,7 @@ func (cfg *ApiConfig) AddChirp(resp http.ResponseWriter, req *http.Request) {
 
 	user, err := cfg.Queries.GetUser(req.Context(), userId)
 	if err != nil {
-		respondWithError(resp, 404, "User not found")
+		respondWithError(resp, 404, "Chirp not found")
 		return
 	}
 
@@ -122,4 +122,50 @@ func (cfg *ApiConfig) GetChirp(resp http.ResponseWriter, req *http.Request) {
 		UserID    uuid.UUID `json:"user_id"`
 	}
 	respondWithJSON(resp, 200, payloadChirp(dbChirp))
+}
+
+func (cfg *ApiConfig) DeleteChirp(resp http.ResponseWriter, req *http.Request) {
+	chirpID, err := uuid.Parse(req.PathValue("chirpID"))
+	if err != nil {
+		fmt.Printf("Could not parse uuid %v\n", req.PathValue("chirpID"))
+		respondWithError(resp, 400, inputVaildationErrorString)
+		return
+	}
+
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(resp, 401, "Token invalid/expired")
+		return
+	}
+	userId, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		fmt.Printf("Failed to validate token due to %v\n", err)
+		respondWithError(resp, 401, "Token invalid/expired")
+		return
+	}
+
+	chirp, err := cfg.Queries.GetChirp(
+		req.Context(),
+		chirpID,
+	)
+	if err != nil {
+		respondWithError(resp, 404, "Chirp not found")
+		return
+	}
+	if chirp.UserID != userId {
+		fmt.Printf("Failed to validate token due to %v\n", err)
+		respondWithError(resp, 403, "Unauthorized action")
+		return
+	}
+
+	err = cfg.Queries.DeleteChirp(
+		req.Context(),
+		chirpID,
+	)
+	if err != nil {
+		fmt.Printf("Failed to delete chirp due to %v\n", err)
+		respondWithError(resp, 500, serverErrorString)
+		return
+	}
+	respondWithJSON(resp, 204, struct{}{})
 }
