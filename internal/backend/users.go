@@ -105,7 +105,7 @@ func (cfg *ApiConfig) UpdateUser(resp http.ResponseWriter, req *http.Request) {
 		CreatedAt   time.Time `json:"created_at"`
 		UpdatedAt   time.Time `json:"updated_at"`
 		Email       string    `json:"email"`
-		IsChirpyRed bool      `json:"is_chirpy_red "`
+		IsChirpyRed bool      `json:"is_chirpy_red"`
 	}
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
